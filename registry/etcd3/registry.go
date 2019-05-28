@@ -43,7 +43,8 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 		return nil, err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	//ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	registry := &EtcdReigistry{
 		etcd3Client: client,
 		key:         option.RegistryDir + "/" + option.ServiceName + "/" + option.NodeID,
