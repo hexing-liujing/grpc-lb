@@ -58,8 +58,11 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 func (e *EtcdReigistry) Register() error {
 
 	insertFunc := func() error {
-		resp, _ := e.etcd3Client.Grant(e.ctx, int64(e.ttl))
-		_, err := e.etcd3Client.Get(e.ctx, e.key)
+		resp, err := e.etcd3Client.Grant(e.ctx, int64(e.ttl))
+		if err != nil {
+			return err
+		}
+		_, err = e.etcd3Client.Get(e.ctx, e.key)
 		if err != nil {
 			if err == rpctypes.ErrKeyNotFound {
 				if _, err := e.etcd3Client.Put(e.ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
@@ -84,7 +87,7 @@ func (e *EtcdReigistry) Register() error {
 		return err
 	}
 
-	ticker := time.NewTicker(e.ttl / 5)
+	ticker := time.NewTicker(e.ttl / 3)
 	for {
 		select {
 		case <-ticker.C:
