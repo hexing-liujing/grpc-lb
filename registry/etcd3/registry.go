@@ -59,14 +59,17 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 func (e *EtcdReigistry) Register() error {
 
 	insertFunc := func() error {
-		resp, err := e.etcd3Client.Grant(e.ctx, int64(e.ttl)) //s
+		var err error
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		resp, err := e.etcd3Client.Grant(ctx, int64(e.ttl)) //s
 		if err != nil {
 			return err
 		}
-		_, err = e.etcd3Client.Get(e.ctx, e.key)
+		_, err = e.etcd3Client.Get(ctx, e.key)
 		if err != nil {
 			if err == rpctypes.ErrKeyNotFound {
-				if _, err := e.etcd3Client.Put(e.ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
+				if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
 					grpclog.Printf("grpclb: set key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
 				}
 			} else {
@@ -75,7 +78,7 @@ func (e *EtcdReigistry) Register() error {
 			return err
 		} else {
 			// refresh set to true for not notifying the watcher
-			if _, err := e.etcd3Client.Put(e.ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
+			if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
 				grpclog.Printf("grpclb: refresh key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
 				return err
 			}
@@ -92,7 +95,10 @@ func (e *EtcdReigistry) Register() error {
 	for {
 		select {
 		case <-ticker.C:
-			insertFunc()
+			err = insertFunc()
+			if err != nil {
+				grpclog.Println(err)
+			}
 		case <-e.ctx.Done():
 			ticker.Stop()
 			if _, err := e.etcd3Client.Delete(context.Background(), e.key); err != nil {

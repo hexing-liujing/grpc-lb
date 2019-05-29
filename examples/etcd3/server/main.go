@@ -69,7 +69,7 @@ func StartService() {
 				Addr: fmt.Sprintf("127.0.0.1:%d", *port),
 				//Metadata: map[string]string{"weight": "1"},
 			},
-			Ttl: 1000 * time.Second,
+			Ttl: 20,
 		})
 	if err != nil {
 		log.Panic(err)
