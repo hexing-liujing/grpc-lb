@@ -43,8 +43,8 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 		return nil, err
 	}
 
-	//ctx, cancel := context.WithCancel(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
+	//ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	registry := &EtcdReigistry{
 		etcd3Client: client,
 		key:         option.RegistryDir + "/" + option.ServiceName + "/" + option.NodeID,
@@ -59,7 +59,7 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 func (e *EtcdReigistry) Register() error {
 
 	insertFunc := func() error {
-		resp, err := e.etcd3Client.Grant(e.ctx, int64(e.ttl))
+		resp, err := e.etcd3Client.Grant(e.ctx, int64(e.ttl)) //s
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (e *EtcdReigistry) Register() error {
 		return err
 	}
 
-	ticker := time.NewTicker(e.ttl / 3)
+	ticker := time.NewTicker(e.ttl * time.Second / 3)
 	for {
 		select {
 		case <-ticker.C:
