@@ -2,8 +2,8 @@ package etcd
 
 import (
 	"encoding/json"
+	"fmt"
 	etcd3 "github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
 	"time"
@@ -13,6 +13,7 @@ type EtcdReigistry struct {
 	etcd3Client *etcd3.Client
 	key         string
 	value       string
+	ID          etcd3.LeaseID
 	ttl         time.Duration
 	ctx         context.Context
 	cancel      context.CancelFunc
@@ -59,38 +60,33 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 func (e *EtcdReigistry) Register() error {
 
 	insertFunc := func() error {
-		var err error
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		resp, err := e.etcd3Client.Grant(ctx, int64(e.ttl)) //s
-		if err != nil {
-			return err
-		}
-		_, err = e.etcd3Client.Get(ctx, e.key)
-		if err != nil {
-			if err == rpctypes.ErrKeyNotFound {
-				if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
+		if e.ID == 0 {
+			if resp, err := e.etcd3Client.Grant(ctx, int64(e.ttl)); err != nil {
+				return err
+			} else {
+				e.ID = resp.ID
+				fmt.Println(resp.ID, resp.TTL)
+				if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(e.ID)); err != nil {
 					grpclog.Printf("grpclb: set key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
 				}
-			} else {
-				grpclog.Printf("grpclb: key '%s' connect to etcd3 failed: %s", e.key, err.Error())
-			}
-			return err
-		} else {
-			// refresh set to true for not notifying the watcher
-			if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(resp.ID)); err != nil {
-				grpclog.Printf("grpclb: refresh key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
-				return err
 			}
 		}
+		if _, err := e.etcd3Client.KeepAlive(context.TODO(), e.ID); err != nil {
+			grpclog.Printf("grpclb: key '%s' KeepAlive failed: %s", e.key, err.Error())
+		}
+		//if r,err := e.etcd3Client.TimeToLive(ctx,e.ID);err != nil {
+		//	fmt.Println(err)
+		//}else {
+		//	fmt.Println("keep:",e.ID,r.TTL)
+		//}
 		return nil
 	}
-
 	err := insertFunc()
 	if err != nil {
 		return err
 	}
-
 	ticker := time.NewTicker(e.ttl * time.Second / 3)
 	for {
 		select {
