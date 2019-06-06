@@ -19,7 +19,7 @@ func main() {
 	b := grpclb.NewBalancer(r, grpclb.NewRoundRobinSelector())
 	c, err := grpc.Dial("", grpc.WithInsecure(), grpc.WithBalancer(b), grpc.WithTimeout(time.Second*5))
 	if err != nil {
-		log.Printf("grpc dial: %s", err)
+		log.Printf("grpc dial: %scd", err)
 		return
 	}
 	defer c.Close()

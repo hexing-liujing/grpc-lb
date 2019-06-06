@@ -5,13 +5,12 @@ import (
 	"fmt"
 	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/liyue201/grpc-lb/examples/proto"
-	registry "github.com/liyue201/grpc-lb/registry/etcd3"
+	registry "github.com/qingcloudhx/grpc-lb/registry/etcd3"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
 	"net"
 	"sync"
-	"time"
 )
 
 var nodeID = flag.String("node", "node1", "node ID")
@@ -56,7 +55,7 @@ func (s *RpcServer) Say(ctx context.Context, req *proto.SayReq) (*proto.SayResp,
 
 func StartService() {
 	etcdConfg := etcd.Config{
-		Endpoints: []string{"http://127.0.0.1:2379"},
+		Endpoints: []string{"http://127.0.0.1:32769"},
 	}
 
 	registry, err := registry.NewRegistry(

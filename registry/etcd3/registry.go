@@ -2,7 +2,6 @@ package etcd
 
 import (
 	"encoding/json"
-	"fmt"
 	etcd3 "github.com/coreos/etcd/clientv3"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
@@ -67,20 +66,16 @@ func (e *EtcdReigistry) Register() error {
 				return err
 			} else {
 				e.ID = resp.ID
-				fmt.Println(resp.ID, resp.TTL)
 				if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(e.ID)); err != nil {
 					grpclog.Printf("grpclb: set key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
+				} else {
+					grpclog.Printf("grpclb: register fail")
 				}
 			}
 		}
 		if _, err := e.etcd3Client.KeepAlive(context.TODO(), e.ID); err != nil {
 			grpclog.Printf("grpclb: key '%s' KeepAlive failed: %s", e.key, err.Error())
 		}
-		//if r,err := e.etcd3Client.TimeToLive(ctx,e.ID);err != nil {
-		//	fmt.Println(err)
-		//}else {
-		//	fmt.Println("keep:",e.ID,r.TTL)
-		//}
 		return nil
 	}
 	err := insertFunc()
