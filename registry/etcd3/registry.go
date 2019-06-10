@@ -81,7 +81,7 @@ func (e *EtcdReigistry) Register() error {
 	}
 	err := insertFunc()
 	if err != nil {
-		return err
+		grpclog.Printf("grpclb: insertFunc failed: %s", e.key, err.Error())
 	}
 	ticker := time.NewTicker((e.ttl/2 - 1) * time.Second)
 	for {
