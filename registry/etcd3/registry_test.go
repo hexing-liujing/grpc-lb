@@ -47,7 +47,6 @@ func TestNewRegistry2(t *testing.T) {
 			NData: NodeData{
 				Addr: "127.0.0.1:8080",
 			},
-			Ttl: 20, //s
 		})
 	if err != nil {
 		t.Error(err)

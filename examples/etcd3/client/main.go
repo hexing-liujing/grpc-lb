@@ -1,19 +1,20 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	etcd "github.com/coreos/etcd/clientv3"
-	grpclb "github.com/liyue201/grpc-lb"
-	"github.com/liyue201/grpc-lb/examples/proto"
-	registry "github.com/liyue201/grpc-lb/registry/etcd3"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	grpclb "grpc-lb"
+	"grpc-lb/examples/proto"
+	registry "grpc-lb/registry/etcd3"
 	"log"
 	"time"
 )
 
 func main() {
 	etcdConfg := etcd.Config{
-		Endpoints: []string{"http://127.0.0.1:2379"},
+		Endpoints: []string{"http://127.0.0.1:32769"},
 	}
 	r := registry.NewResolver("/grpc-lb", "test", etcdConfg)
 	b := grpclb.NewBalancer(r, grpclb.NewRoundRobinSelector())
@@ -25,9 +26,11 @@ func main() {
 	defer c.Close()
 
 	client := proto.NewTestClient(c)
-
-	for i := 0; i < 50; i++ {
-		resp, err := client.Say(context.Background(), &proto.SayReq{Content: "round robin"})
+	fmt.Println("start")
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		resp, err := client.Say(ctx, &proto.SayReq{Content: "round robin"})
+		cancel()
 		if err != nil {
 			log.Println("aa:", err)
 			time.Sleep(time.Second)

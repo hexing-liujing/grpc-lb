@@ -1,10 +1,10 @@
 package main
 
 import (
-	grpclb "github.com/liyue201/grpc-lb"
-	"github.com/liyue201/grpc-lb/examples/proto"
-	"github.com/liyue201/grpc-lb/registry/consul"
-	"golang.org/x/net/context"
+	grpclb "github.com/qingcloudhx/grpc-lb"
+	"github.com/qingcloudhx/grpc-lb/examples/proto"
+	"github.com/qingcloudhx/grpc-lb/registry/consul"
+	"context"
 	"google.golang.org/grpc"
 	"log"
 )

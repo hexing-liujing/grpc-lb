@@ -1,7 +1,7 @@
 package grpclb
 
 import (
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/naming"

@@ -1,12 +1,14 @@
 package etcd
 
 import (
+	"context"
 	"encoding/json"
 	etcd3 "github.com/coreos/etcd/clientv3"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
 	"time"
 )
+
+const heart_time = 10
 
 type EtcdReigistry struct {
 	etcd3Client *etcd3.Client
@@ -24,7 +26,6 @@ type Option struct {
 	ServiceName string
 	NodeID      string
 	NData       NodeData
-	Ttl         time.Duration
 }
 
 type NodeData struct {
@@ -49,7 +50,7 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 		etcd3Client: client,
 		key:         option.RegistryDir + "/" + option.ServiceName + "/" + option.NodeID,
 		value:       string(val),
-		ttl:         option.Ttl,
+		ttl:         heart_time,
 		ctx:         ctx,
 		cancel:      cancel,
 	}
@@ -62,7 +63,7 @@ func (e *EtcdReigistry) Register() error {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		if e.ID == 0 {
-			if resp, err := e.etcd3Client.Grant(ctx, int64(e.ttl)); err != nil {
+			if resp, err := e.etcd3Client.Grant(ctx, int64(heart_time)); err != nil {
 				return err
 			} else {
 				e.ID = resp.ID
@@ -82,7 +83,7 @@ func (e *EtcdReigistry) Register() error {
 	if err != nil {
 		return err
 	}
-	ticker := time.NewTicker(e.ttl * time.Second / 3)
+	ticker := time.NewTicker((e.ttl/2 - 1) * time.Second)
 	for {
 		select {
 		case <-ticker.C:

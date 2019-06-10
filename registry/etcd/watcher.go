@@ -1,9 +1,9 @@
 package etcd
 
 import (
+	"context"
 	"encoding/json"
 	etcd "github.com/coreos/etcd/client"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/naming"
 )

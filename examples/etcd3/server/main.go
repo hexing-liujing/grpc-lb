@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/liyue201/grpc-lb/examples/proto"
+	"github.com/qingcloudhx/grpc-lb/examples/proto"
 	registry "github.com/qingcloudhx/grpc-lb/registry/etcd3"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"log"
 	"net"
