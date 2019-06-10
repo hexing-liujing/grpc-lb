@@ -20,6 +20,7 @@ type EtcdWatcher struct {
 }
 
 func (w *EtcdWatcher) Close() {
+	close(w.sign)
 	w.cancel()
 }
 
