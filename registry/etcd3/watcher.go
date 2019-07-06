@@ -86,7 +86,7 @@ func (w *EtcdWatcher) Next() ([]*naming.Update, error) {
 				return updates, nil
 			}
 		} else {
-			grpclog.Println("Etcd Watcher Get key error:", err)
+			grpclog.Errorf("Etcd Watcher Get key error:", err)
 		}
 	}
 	select {
