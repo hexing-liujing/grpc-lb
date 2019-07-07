@@ -20,8 +20,8 @@ type EtcdWatcher struct {
 }
 
 func (w *EtcdWatcher) Close() {
-	close(w.sign)
 	w.cancel()
+	close(w.sign)
 }
 
 func newEtcdWatcher(key string, cli *etcd3.Client) naming.Watcher {
