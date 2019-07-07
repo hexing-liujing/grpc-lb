@@ -7,6 +7,11 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/naming"
+	"sync/atomic"
+)
+
+const (
+	close_channel = 1
 )
 
 // EtcdWatcher is the implementation of grpc.naming.Watcher
@@ -15,11 +20,13 @@ type EtcdWatcher struct {
 	client  *etcd3.Client
 	updates []*naming.Update
 	sign    chan *naming.Update
+	closed  int32
 	ctx     context.Context
 	cancel  context.CancelFunc
 }
 
 func (w *EtcdWatcher) Close() {
+	atomic.StoreInt32(&w.closed, close_channel)
 	w.cancel()
 	close(w.sign)
 }
@@ -52,6 +59,9 @@ func (w *EtcdWatcher) watch() {
 					continue
 				}
 				//fmt.Println("add:",nodeData)
+				if val := atomic.LoadInt32(&w.closed); val == close_channel {
+					return
+				}
 				w.sign <- &naming.Update{Op: naming.Add, Addr: nodeData.Addr, Metadata: &nodeData.Metadata}
 				//updates = append(updates, &naming.Update{Op: naming.Add, Addr: nodeData.Addr, Metadata: &nodeData.Metadata})
 			case mvccpb.DELETE:
@@ -63,6 +73,9 @@ func (w *EtcdWatcher) watch() {
 					continue
 				}
 				//fmt.Println("delete:",nodeData)
+				if val := atomic.LoadInt32(&w.closed); val == close_channel {
+					return
+				}
 				w.sign <- &naming.Update{Op: naming.Delete, Addr: nodeData.Addr, Metadata: &nodeData.Metadata}
 				//updates = append(updates, &naming.Update{Op: naming.Delete, Addr: nodeData.Addr, Metadata: &nodeData.Metadata})
 			}
@@ -90,7 +103,10 @@ func (w *EtcdWatcher) Next() ([]*naming.Update, error) {
 		}
 	}
 	select {
-	case addr := <-w.sign:
+	case addr, ok := <-w.sign:
+		if !ok {
+			return updates, nil
+		}
 		w.updates = append(w.updates, addr)
 	case <-w.ctx.Done():
 	}
