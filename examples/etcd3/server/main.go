@@ -55,7 +55,7 @@ func (s *RpcServer) Say(ctx context.Context, req *proto.SayReq) (*proto.SayResp,
 
 func StartService() {
 	etcdConfg := etcd.Config{
-		Endpoints: []string{"http://127.0.0.1:32769"},
+		Endpoints: []string{"http://127.0.0.1:2379"},
 	}
 
 	registry, err := registry.NewRegistry(

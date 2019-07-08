@@ -14,7 +14,7 @@ import (
 
 func main() {
 	etcdConfg := etcd.Config{
-		Endpoints: []string{"http://127.0.0.1:32769"},
+		Endpoints: []string{"http://127.0.0.1:2379"},
 	}
 	r := registry.NewResolver("/grpc-lb", "test", etcdConfg)
 	b := grpclb.NewBalancer(r, grpclb.NewRoundRobinSelector())
