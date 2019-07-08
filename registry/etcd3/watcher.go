@@ -49,6 +49,9 @@ func (w *EtcdWatcher) watch() {
 	// generate etcd Watcher
 	rch := w.client.Watch(w.ctx, w.key, etcd3.WithPrefix())
 	for wresp := range rch {
+		if wresp.Err() != nil {
+			return
+		}
 		for _, ev := range wresp.Events {
 			switch ev.Type {
 			case mvccpb.PUT:
