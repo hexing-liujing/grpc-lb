@@ -7,6 +7,7 @@ import (
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/naming"
+	"sync"
 )
 
 // EtcdWatcher is the implementation of grpc.naming.Watcher
@@ -17,10 +18,12 @@ type EtcdWatcher struct {
 	sign    chan *naming.Update
 	ctx     context.Context
 	cancel  context.CancelFunc
+	wg      sync.WaitGroup
 }
 
 func (w *EtcdWatcher) Close() {
 	w.cancel()
+	w.wg.Wait()
 	close(w.sign)
 }
 
@@ -31,9 +34,10 @@ func newEtcdWatcher(key string, cli *etcd3.Client) naming.Watcher {
 		client:  cli,
 		ctx:     ctx,
 		updates: make([]*naming.Update, 0),
-		sign:    make(chan *naming.Update),
+		sign:    make(chan *naming.Update, 10),
 		cancel:  cancel,
 	}
+	w.wg.Add(1)
 	go w.watch()
 	return w
 }
@@ -41,6 +45,7 @@ func newEtcdWatcher(key string, cli *etcd3.Client) naming.Watcher {
 func (w *EtcdWatcher) watch() {
 	// generate etcd Watcher
 	rch := w.client.Watch(w.ctx, w.key, etcd3.WithPrefix())
+	defer w.wg.Done()
 	for {
 		select {
 		case wresp, ok := <-rch:
