@@ -12,6 +12,8 @@ const heart_time = 10
 
 type EtcdReigistry struct {
 	etcd3Client *etcd3.Client
+	lease       etcd3.Lease
+	kv          etcd3.KV
 	key         string
 	value       string
 	ID          etcd3.LeaseID
@@ -38,7 +40,8 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	lease := etcd3.NewLease(client)
+	kv := etcd3.NewKV(client)
 	val, err := json.Marshal(option.NData)
 	if err != nil {
 		return nil, err
@@ -47,6 +50,8 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	//ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	registry := &EtcdReigistry{
+		lease:       lease,
+		kv:          kv,
 		etcd3Client: client,
 		key:         option.RegistryDir + "/" + option.ServiceName + "/" + option.NodeID,
 		value:       string(val),
@@ -60,22 +65,27 @@ func NewRegistry(option Option) (*EtcdReigistry, error) {
 func (e *EtcdReigistry) Register() error {
 
 	insertFunc := func() error {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
 		if e.ID == 0 {
-			if resp, err := e.etcd3Client.Grant(ctx, int64(heart_time)); err != nil {
+			if resp, err := e.lease.Grant(context.TODO(), int64(heart_time)); err != nil {
 				return err
 			} else {
 				e.ID = resp.ID
-				if _, err := e.etcd3Client.Put(ctx, e.key, e.value, etcd3.WithLease(e.ID)); err != nil {
+				if _, err := e.kv.Put(context.TODO(), e.key, e.value, etcd3.WithLease(e.ID)); err != nil {
 					grpclog.Printf("grpclb: set key '%s' with ttl to etcd3 failed: %s", e.key, err.Error())
 				} else {
 					grpclog.Printf("grpclb: register fail")
 				}
 			}
 		}
-		if _, err := e.etcd3Client.KeepAlive(context.TODO(), e.ID); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if rc, err := e.lease.KeepAlive(ctx, e.ID); err != nil {
 			grpclog.Printf("grpclb: key '%s' KeepAlive failed: %s", e.key, err.Error())
+		} else {
+			kresp := <-rc
+			if kresp.ID != e.ID {
+				grpclog.Printf("grpclb: key '%s' KeepAlive failed kresp.ID:%d,e.ID:%D", e.key, kresp.ID, e.ID)
+			}
 		}
 		return nil
 	}
