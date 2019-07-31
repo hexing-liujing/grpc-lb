@@ -95,8 +95,7 @@ func (w *EtcdWatcher) Next() ([]*naming.Update, error) {
 		if err == nil {
 			addrs := extractAddrs(resp)
 			if len(addrs) > 0 {
-				for _, addr := range addrs {
-					v := addr
+				for _, v := range addrs {
 					updates = append(updates, &naming.Update{Op: naming.Add, Addr: v.Addr, Metadata: &v.Metadata})
 				}
 				w.updates = updates
