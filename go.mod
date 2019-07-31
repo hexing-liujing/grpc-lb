@@ -1,4 +1,4 @@
-module grpc-lb
+module github.com/qingcloudhx/grpc-lb
 
 go 1.12
 
@@ -23,7 +23,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/prometheus/client_golang v0.9.3 // indirect
-	github.com/qingcloudhx/grpc-lb v0.0.0-20190606081030-d2e7f770cd6e
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
